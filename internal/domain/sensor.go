@@ -14,3 +14,7 @@ type SensorData struct {
 type BulkSensorData struct {
 	Data []SensorData `json:"data"`
 }
+
+type DataConsumer interface {
+	Process(data []SensorData) error
+}

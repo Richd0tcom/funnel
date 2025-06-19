@@ -1,6 +1,15 @@
 package domain
 
-import "time"
+import (
+	"context"
+	"time"
+)
+
+type DataStore interface {
+	InsertBatch(ctx context.Context, data []SensorData) error
+	GetAggregates(ctx context.Context, query AggregateQuery) ([]AggregateResult, error)
+	Close() error
+}
 
 
 type AggregateQuery struct {
