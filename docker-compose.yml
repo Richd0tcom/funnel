@@ -5,7 +5,7 @@ services:
     container_name: sensor-mongo
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "27018:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
@@ -13,11 +13,12 @@ services:
     volumes:
       - mongodb_data:/data/db
       - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-    command: --replSet rs0 --bind_ip_all
+    command: --bind_ip_all
 
   # Kafka for message queuing
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.4.0
+    # image: confluentinc/cp-zookeeper:7.4.0
+    image: zookeeper:latest
     container_name: sensor-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
@@ -27,6 +28,7 @@ services:
       - zookeeper_logs:/var/lib/zookeeper/log
 
   kafka:
+    # image: confluentinc/cp-kafka:7.4.0
     image: confluentinc/cp-kafka:7.4.0
     container_name: sensor-kafka
     depends_on:
@@ -100,7 +102,7 @@ services:
       dockerfile: load-testing/Dockerfile.loadtest
     container_name: sensor-load-tester
     depends_on:
-      - app-channels
+      - app-kafka
     environment:
       TARGET_URL: http://app-channels:8080
       CONCURRENT_USERS: 10
