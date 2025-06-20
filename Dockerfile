@@ -1,7 +1,7 @@
 # Build stage
 FROM golang:1.23-alpine AS builder
 
-# Install build dependencies for librdkafka
+
 RUN apk add --no-cache \
     gcc \
     musl-dev \
@@ -11,7 +11,7 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-# Copy go mod files first for better caching
+
 COPY go.mod go.sum ./
 RUN go mod download
 
