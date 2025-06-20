@@ -76,7 +76,9 @@ func NewMongoTimeSeriesStore(uri, database string) (*MongoTimeSeriesStore, error
 	}, nil
 }
 
-func (m *MongoTimeSeriesStore) InsertBatch(ctx context.Context, data []any) error {//use to insert sensor data
+func (m *MongoTimeSeriesStore) InsertBatch(ctx context.Context, dat any) error {//use to insert sensor data
+	data:= dat.([]any) //check here for possible error
+	
 	if len(data) == 0 {
 		return nil
 	}

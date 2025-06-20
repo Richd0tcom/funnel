@@ -6,7 +6,7 @@ import (
 )
 
 type DataStore interface {
-	InsertBatch(ctx context.Context, data []SensorData) error
+	InsertBatch(ctx context.Context, data any) error
 	GetAggregates(ctx context.Context, query AggregateQuery) ([]AggregateResult, error)
 	Close() error
 }

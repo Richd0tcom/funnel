@@ -59,12 +59,12 @@ func (w *Worker) worker(ctx context.Context, workerID int, mq broker.MessageQueu
 	handler := func(data []byte) error {
 		var bulkData domain.BulkSensorData
 		if err := json.Unmarshal(data, &bulkData); err != nil {
-			// w.metrics.ProcessingErrors.Inc()
+			
 			return fmt.Errorf("failed to unmarshal data: %w", err)
 		}
 
 		batch = append(batch, bulkData.Data...)
-		// w.metrics.MessagesReceived.Add(float64(len(bulkData.Data)))
+		
 
 		if len(batch) >= w.batchSize {
 			w.processBatch(ctx, batch)
@@ -104,20 +104,15 @@ func (w *Worker) processBatch(ctx context.Context, batch []domain.SensorData) {
 
 	if err := w.store.InsertBatch(ctx, batch); err != nil {
 		log.Printf("Failed to store batch: %v", err)
-		// w.metrics.ProcessingErrors.Inc()
 		return
 	}
 
-
 	if err := w.consumer.Process(batch); err != nil {
 		log.Printf("Failed to process batch in consumer: %v", err)
-		// w.metrics.ProcessingErrors.Inc()
 		return
 	}
 
 	duration := time.Since(start)
-	// w.metrics.BatchProcessingDuration.Observe(duration.Seconds())
-	// w.metrics.MessagesProcessed.Add(float64(len(batch)))
 
 		log.Printf("Processed batch of %d items in %v", len(batch), duration)
 
