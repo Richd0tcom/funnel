@@ -79,6 +79,34 @@ func (tr *TestResults) GetStats() (float64, float64, time.Duration) {
 	return successRate, float64(tr.TotalRequests), avgLatency
 }
 
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+func getEnvInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if parsed, err := strconv.Atoi(value); err == nil {
+			return parsed
+		}
+	}
+	return defaultValue
+}
+
+func getEnvDuration(key string, defaultValue string) time.Duration {
+	if value := os.Getenv(key); value != "" {
+		if parsed, err := time.ParseDuration(value); err == nil {
+			return parsed
+		}
+	}
+	if parsed, err := time.ParseDuration(defaultValue); err == nil {
+		return parsed
+	}
+	return time.Minute
+}
+
 func generateSensorData(count int) BulkSensorData {
 	sensorTypes := []string{"temperature", "humidity", "pressure", "light", "motion", "sound"}
 	sensorIDs := []string{"sensor_001", "sensor_002", "sensor_003", "sensor_004", "sensor_005", "sensor_006", "sensor_007", "sensor_008", "sensor_009", "sensor_010"}
@@ -182,7 +210,7 @@ func worker(ctx context.Context, workerID int, config LoadTestConfig, results *T
 			log.Printf("Worker %d stopped", workerID)
 			return
 		case <-ticker.C:
-			// Generate test data with varying batch sizes
+			
 			batchSize := rand.Intn(50) + 10 // 10-60 data points per batch
 			testData := generateSensorData(batchSize)
 
@@ -272,7 +300,7 @@ func main() {
 	fmt.Printf("Requests per second per user: %d\n", config.RequestsPerSec)
 	fmt.Printf("Total expected requests per second: %d\n", config.ConcurrentUsers*config.RequestsPerSec)
 
-	// Wait for service to be ready
+	// ready or not, here I come
 	fmt.Println("\nWaiting for service to be ready...")
 	client := &http.Client{Timeout: 5 * time.Second}
 
@@ -291,17 +319,17 @@ func main() {
 		time.Sleep(2 * time.Second)
 	}
 
-	// Initialize results tracking
+
 	results := &TestResults{}
 
-	// Create context with timeout
+
 	ctx, cancel := context.WithTimeout(context.Background(), config.Duration)
 	defer cancel()
 
-	// Start progress reporting
+
 	go printProgress(ctx, results, config.Duration)
 
-	// Start workers
+
 	var wg sync.WaitGroup
 	fmt.Printf("\nStarting %d concurrent users...\n", config.ConcurrentUsers)
 
@@ -310,7 +338,7 @@ func main() {
 		go worker(ctx, i+1, config, results, &wg)
 	}
 
-	// Wait for test completion
+
 	wg.Wait()
 
 	// Final results
@@ -337,7 +365,7 @@ func main() {
 		}
 	}
 
-	// Test aggregate endpoint
+
 	if err := testAggregateEndpoint(&http.Client{Timeout: 30 * time.Second}, config.TargetURL); err != nil {
 		fmt.Printf("Aggregate endpoint test failed: %v\n", err)
 	}
@@ -345,30 +373,4 @@ func main() {
 	fmt.Println("\nLoad test completed!")
 }
 
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
 
-func getEnvInt(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		if parsed, err := strconv.Atoi(value); err == nil {
-			return parsed
-		}
-	}
-	return defaultValue
-}
-
-func getEnvDuration(key string, defaultValue string) time.Duration {
-	if value := os.Getenv(key); value != "" {
-		if parsed, err := time.ParseDuration(value); err == nil {
-			return parsed
-		}
-	}
-	if parsed, err := time.ParseDuration(defaultValue); err == nil {
-		return parsed
-	}
-	return time.Minute
-}

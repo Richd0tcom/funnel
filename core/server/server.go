@@ -34,12 +34,12 @@ func NewServer(options ...ConfigOption) (*Server, error) {
 		}
 	}
 
-	// Set default consumer if not provided
+
 	if config.Consumer == nil {
 		config.Consumer = consumer.NewMockDataConsumer("DefaultConsumer")
 	}
 
-	// metrics := NewMetrics()
+
 	processor := worker.NewWorker(config.DataStore, config.Consumer, config.WorkerCount, config.BatchSize)
 
 	server := &Server{
@@ -53,7 +53,7 @@ func NewServer(options ...ConfigOption) (*Server, error) {
 }
 
 func (s *Server) setupRoutes() {
-	// Health check
+
 	s.router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
@@ -61,7 +61,7 @@ func (s *Server) setupRoutes() {
 	// Metrics endpoint
 	s.router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	// API routes
+
 	api := s.router.Group("/api/v1")
 	{
 		api.POST("/ingest", s.handleIngest)
@@ -76,13 +76,13 @@ func (s *Server) handleIngest(c *gin.Context) {
 		return
 	}
 
-	// Validate data
+
 	if len(bulkData.Data) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "no data provided"})
 		return
 	}
 
-	// Publish to message queue
+
 	data, err := json.Marshal(bulkData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to serialize data"})
