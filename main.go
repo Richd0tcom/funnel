@@ -13,7 +13,7 @@ import (
 func main() {
 	messageQueueType := os.Getenv("MESSAGE_QUEUE_TYPE") // kafka, rabbitmq, channels
 	if messageQueueType == "" {
-		messageQueueType = "channels"
+		messageQueueType = "kafka"
 	}
 
 	mongoURI := os.Getenv("MONGO_URI")
@@ -42,7 +42,6 @@ func main() {
 		log.Fatalf("Failed to create server: %v", err)
 	}
 
-	
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -55,7 +54,6 @@ func main() {
 		cancel()
 	}()
 
-	
 	if err := srv.Start(ctx); err != nil {
 		log.Fatalf("Server error: %v", err)
 	}

@@ -1,0 +1,121 @@
+services:
+  # MongoDB for time series data
+  mongodb:
+    image: mongo:6.0
+    container_name: sensor-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: sensor_db
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    command: --replSet rs0 --bind_ip_all
+
+  # Kafka for message queuing
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: sensor-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: sensor-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+
+
+  # # Prometheus for metrics
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: sensor-prometheus
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+  #     - prometheus_data:/prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #     - '--web.console.libraries=/etc/prometheus/console_libraries'
+  #     - '--web.console.templates=/etc/prometheus/consoles'
+  #     - '--storage.tsdb.retention.time=200h'
+  #     - '--web.enable-lifecycle'
+
+  # # Grafana for visualization
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: sensor-grafana
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     GF_SECURITY_ADMIN_PASSWORD: admin
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #     - ./config/grafana:/etc/grafana/provisioning
+
+  app-kafka:
+    build: .
+    container_name: sensor-app-kafka
+    ports:
+      - "8081:8080"
+    environment:
+      MESSAGE_QUEUE_TYPE: kafka
+      KAFKA_BROKERS: kafka:9092
+      MONGO_URI: mongodb://admin:password@mongodb:27017/sensor_db?authSource=admin
+      PORT: 8080
+    depends_on:
+      - mongodb
+      - kafka
+    restart: unless-stopped
+    profiles:
+      - kafka
+
+
+  # Load testing tool
+  load-tester:
+    build:
+      context: .
+      dockerfile: load-testing/Dockerfile.loadtest
+    container_name: sensor-load-tester
+    depends_on:
+      - app-channels
+    environment:
+      TARGET_URL: http://app-channels:8080
+      CONCURRENT_USERS: 10
+      DURATION: 60s
+    profiles:
+      - loadtest
+
+volumes:
+  mongodb_data:
+  zookeeper_data:
+  zookeeper_logs:
+  kafka_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  default:
+    name: sensor-network
