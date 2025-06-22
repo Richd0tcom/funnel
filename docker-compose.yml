@@ -7,8 +7,8 @@ services:
     ports:
       - "27018:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
+      # MONGO_INITDB_ROOT_USERNAME: admin
+      # MONGO_INITDB_ROOT_PASSWORD: password
       MONGO_INITDB_DATABASE: sensor_db
     volumes:
       - mongodb_data:/data/db
@@ -35,10 +35,14 @@ services:
       - zookeeper
     ports:
       - "9092:9092"
+      - "29092:29092" 
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -84,7 +88,7 @@ services:
       - "8081:8080"
     environment:
       MESSAGE_QUEUE_TYPE: kafka
-      KAFKA_BROKERS: kafka:9092
+      KAFKA_BROKERS: kafka:29092
       MONGO_URI: mongodb://admin:password@mongodb:27017/sensor_db?authSource=admin
       PORT: 8080
     depends_on:
@@ -101,12 +105,13 @@ services:
       context: .
       dockerfile: load-testing/Dockerfile.loadtest
     container_name: sensor-load-tester
-    depends_on:
-      - app-kafka
+    # depends_on:
+    #   - app-kafka
     environment:
-      TARGET_URL: http://app-channels:8080
+      TARGET_URL: http://app-kafka:8080
       CONCURRENT_USERS: 10
       DURATION: 60s
+      KAFKA_BROKERS: kafka:29092
     profiles:
       - loadtest
 

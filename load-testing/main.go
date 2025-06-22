@@ -178,6 +178,7 @@ func sendRequest(client *http.Client, url string, data BulkSensorData) (bool, ti
 	defer resp.Body.Close()
 
 	latency := time.Since(start)
+	fmt.Println("------status code-------", resp.StatusCode)
 	success := resp.StatusCode >= 200 && resp.StatusCode < 300
 
 	if !success {
@@ -281,6 +282,7 @@ func testAggregateEndpoint(client *http.Client, baseURL string) error {
 
 	fmt.Printf("Aggregate query completed in %v\n", latency.Round(time.Millisecond))
 	fmt.Printf("Results count: %v\n", result["count"])
+	fmt.Println("Results: ", result)
 
 	return nil
 }

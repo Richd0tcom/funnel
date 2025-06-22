@@ -6,7 +6,7 @@ import (
 )
 
 type DataStore interface {
-	InsertBatch(ctx context.Context, data any) error
+	InsertBatch(ctx context.Context, data []SensorData) error
 	GetAggregates(ctx context.Context, query AggregateQuery) ([]AggregateResult, error)
 	Close() error
 }
@@ -21,7 +21,7 @@ type AggregateQuery struct {
 }
 
 type AggregateResult struct {
-	SensorID    string            `json:"sensor_id" bson:"_id"`
+	SensorID    string            `json:"sensor_id" bson:""sensor_id""`
 	MetricType  string            `json:"metric_type" bson:"metric_type"`
 	TimeWindow  time.Time         `json:"time_window" bson:"time_window"`
 	Count       int64             `json:"count" bson:"count"`

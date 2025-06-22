@@ -19,7 +19,8 @@ type MongoTimeSeriesStore struct {
 	collection *mongo.Collection
 }
 
-func NewMongoTimeSeriesStore(uri, database string) (*MongoTimeSeriesStore, error) {
+
+func NewMongoConnection(uri string) (*mongo.Client, error){
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -28,18 +29,27 @@ func NewMongoTimeSeriesStore(uri, database string) (*MongoTimeSeriesStore, error
 		return nil, fmt.Errorf("failed to connect to MongoDB: %w", err)
 	}
 
-	defer func() {
-		if err = client.Disconnect(ctx); err != nil {
-			panic(err)
-		}
-	}()
+	// defer func() {
+	// 	if err = client.Disconnect(ctx); err != nil {
+	// 		panic(err)
+	// 	}
+	// }()
 
 	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
 	_ = client.Ping(ctx, readpref.Primary())
+	
+	return client , err
+}
 
+func NewMongoTimeSeriesStore(client *mongo.Client, database string) (*MongoTimeSeriesStore, error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	
 	db := client.Database(database)
+	
 	
 	tsOptions := options.CreateCollection().SetTimeSeriesOptions(
 		options.TimeSeries().
@@ -76,8 +86,8 @@ func NewMongoTimeSeriesStore(uri, database string) (*MongoTimeSeriesStore, error
 	}, nil
 }
 
-func (m *MongoTimeSeriesStore) InsertBatch(ctx context.Context, dat any) error {//use to insert sensor data
-	data:= dat.([]any) //omo check here for possible error
+func (m *MongoTimeSeriesStore) InsertBatch(ctx context.Context, data []domain.SensorData) error {//use to insert sensor data
+	// data:= dat.([]any) //omo check here for possible error
 	
 	if len(data) == 0 {
 		return nil
@@ -98,12 +108,16 @@ func (m *MongoTimeSeriesStore) GetAggregates(ctx context.Context, query domain.A
 	
 	cursor, err := m.collection.Aggregate(ctx, pipeline)
 	if err != nil {
+		fmt.Println("---------AGGREGATE ERROR!!!!", err)
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
 	var results []domain.AggregateResult
 	if err := cursor.All(ctx, &results); err != nil {
+		fmt.Println("---------AGGREGATE PARSE ERROR!!!!", err)
+
+
 		return nil, err
 	}
 
@@ -147,6 +161,7 @@ func (m *MongoTimeSeriesStore) buildAggregationPipeline(query domain.AggregateQu
 				"$dateToString": bson.M{
 					"format": dateFormat,
 					"date":   "$timestamp",
+					"timezone":   "UTC",
 				},
 			},
 		},
@@ -165,6 +180,8 @@ func (m *MongoTimeSeriesStore) buildAggregationPipeline(query domain.AggregateQu
 		"time_window": bson.M{
 			"$dateFromString": bson.M{
 				"dateString": "$_id.time_window",
+				"format": dateFormat,
+				"timezone":   "UTC",
 			},
 		},
 		"count": 1,

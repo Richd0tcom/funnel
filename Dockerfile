@@ -16,8 +16,9 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy source code selectively (avoid copying unnecessary files)
-COPY *.go ./
-COPY core/ ./core/
+# COPY *.go ./
+# COPY core/ ./core/
+COPY . .
 
 # Build with CGO enabled and optimized flags
 RUN CGO_ENABLED=1 GOOS=linux go build \

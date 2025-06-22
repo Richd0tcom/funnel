@@ -1,12 +1,33 @@
 FROM golang:1.23-alpine AS builder
+
+# Install build dependencies for librdkafka
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    libc-dev \
+    librdkafka-dev \
+    pkgconf
+
 WORKDIR /app
 COPY ../go.mod ../go.sum ./
 RUN go mod download
-COPY main.go .
-RUN CGO_ENABLED=0 GOOS=linux go build -o loadtest .
+COPY ../ ./
+
+# Build with CGO enabled (required for librdkafka)
+RUN CGO_ENABLED=1 GOOS=linux go build \
+    -ldflags='-w -s -linkmode external -extldflags "-static"' \
+    -a -installsuffix cgo \
+    -tags musl \
+    -o loadtest ./load-testing
 
 FROM alpine:latest
-RUN apk --no-cache add ca-certificates wget
+# Install runtime dependencies for librdkafka
+RUN apk --no-cache add \
+    ca-certificates \
+    wget \
+    librdkafka \
+    && rm -rf /var/cache/apk/*
+
 WORKDIR /root/
 COPY --from=builder /app/loadtest .
 CMD ["./loadtest"]

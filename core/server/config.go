@@ -4,6 +4,7 @@ import (
 	"github.com/richd0tcom/funnel/internal/broker"
 	"github.com/richd0tcom/funnel/internal/db"
 	"github.com/richd0tcom/funnel/internal/domain"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type ServerConfig struct {
@@ -29,9 +30,10 @@ func WithKafka(brokers, topic string) ConfigOption {
 }
 
 
-func WithMongoDB(uri, database string) ConfigOption {
+func WithMongoDB(client *mongo.Client, database string) ConfigOption {
+	
 	return func(config *ServerConfig) error {
-		store, err := db.NewMongoTimeSeriesStore(uri, database)
+		store, err := db.NewMongoTimeSeriesStore(client, database)
 		if err != nil {
 			return err
 		}
