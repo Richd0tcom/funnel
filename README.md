@@ -28,6 +28,8 @@ Funnel simulates a high-throughput metric ingestion pipeline. Sensor data is pub
 
 ## Architecture
 
+![aggregator](https://github.com/user-attachments/assets/62f0e228-411c-4085-94b6-57b5686a4c4b)
+
 <!--
 [Architecture Diagram Placeholder]
 Insert architecture diagram here.
