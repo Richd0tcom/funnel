@@ -178,7 +178,7 @@ func sendRequest(client *http.Client, url string, data BulkSensorData) (bool, ti
 	defer resp.Body.Close()
 
 	latency := time.Since(start)
-	fmt.Println("------status code-------", resp.StatusCode)
+
 	success := resp.StatusCode >= 200 && resp.StatusCode < 300
 
 	if !success {
