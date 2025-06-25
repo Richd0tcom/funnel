@@ -34,6 +34,11 @@ func NewWorker(store domain.DataStore, consumer domain.DataConsumer, workerCount
 func (w *Worker) Start(c context.Context, mq broker.MessageQueue) error {
 	var wg sync.WaitGroup
 
+	err:= mq.Subscribe()
+	if err != nil {
+		return err
+	}
+
 	for i:=range w.workerCount {
 		wg.Add(1)
 		go func(workerID int) {
@@ -76,7 +81,7 @@ func (w *Worker) worker(ctx context.Context, workerID int, mq broker.MessageQueu
 	}
 
 	go func() {
-		if err:= mq.Subscribe(ctx, handler); err != nil {
+		if err:= mq.Consume(ctx, handler); err != nil {
 			log.Printf("Worker %d subscription error: %v", workerID, err)
 		}
 	}()

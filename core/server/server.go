@@ -154,7 +154,7 @@ func (s *Server) Start(ctx context.Context) error {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		server.Shutdown(shutdownCtx)
-	}()
+	}()	
 
 	log.Printf("Server starting on port %s", s.config.Port)
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {

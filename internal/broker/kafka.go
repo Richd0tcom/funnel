@@ -134,13 +134,7 @@ func (k *KafkaQueue) Publish(ctx context.Context, data []byte) error {
 	return nil
 }
 
-func (k *KafkaQueue) Subscribe(ctx context.Context, handler func([]byte) error) error {
-
-	err := k.consumer.Subscribe(k.topic, nil)
-
-	if err != nil {
-		return err
-	}
+func (k *KafkaQueue) Consume(ctx context.Context, handler func([]byte) error) error {
 
 	for {
 		select {
@@ -163,6 +157,17 @@ func (k *KafkaQueue) Subscribe(ctx context.Context, handler func([]byte) error) 
 	}
 
 }
+
+func (k *KafkaQueue) Subscribe() error {
+	err := k.consumer.Subscribe(k.topic, nil)
+	
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+
 
 func (k *KafkaQueue) Close() error {
 	k.producer.Close()
